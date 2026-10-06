@@ -598,8 +598,9 @@ BEGIN
 
           END IF;
           
-          IF ioctl_download='0' AND rom_exec_up='1' AND
-            rom_ecs_up='1' AND rom_voice_up='1' AND rom_grom_up='1' THEN
+          -- Leave as soon as this file ends : boot0..3.rom are separate
+          -- downloads and boot2/boot3 (voice, ECS) may be missing.
+          IF ioctl_download='0' THEN
             state<=sIDLE;
           END IF;
           
