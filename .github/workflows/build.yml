@@ -1,0 +1,46 @@
+# Builds the core with Quartus 17.0.2 (Lite, in a container) and leaves the .rbf as a download.
+# Test build for this branch; not meant to be merged upstream.
+name: Build Intellivision core
+
+on:
+  push:
+    branches: [claude/vibrant-rubin-ctdjyk]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile (Quartus 17.0.2)
+        run: |
+          docker run --rm -v "$PWD":/project -w /project theypsilon/quartus-lite-c5:17.0.2 \
+            quartus_sh --flow compile Intv.qpf
+
+      - name: Summary
+        if: always()
+        run: |
+          for f in output_files/Intv.fit.summary output_files/Intv.sta.summary; do
+            [ -f "$f" ] && { echo "== $f"; cat "$f"; } || echo "missing: $f"
+          done
+          ls -l output_files/*.rbf
+
+      - name: Name the file
+        run: cp output_files/Intv.rbf "Intellivision_bootfix_$(date -u +%Y%m%d).rbf"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Intellivision_bootfix
+          path: Intellivision_bootfix_*.rbf
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-reports
+          path: |
+            output_files/*.rpt
+            output_files/*.summary
+          if-no-files-found: ignore
